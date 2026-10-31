@@ -465,7 +465,11 @@ jobs:
           const fs = require("node:fs");
           const path = process.argv[2];
           const review = JSON.parse(fs.readFileSync(path, "utf8"));
-          const sanitize = (body) => body.replace(/<!--[\s\S]*?-->|[\u0000-\u0008\u000b-\u001f\u007f-\u009f\u00ad\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff\u{e0000}-\u{e007f}]/gu, "");
+          const sanitize = (body) => {
+            let result = body.replace(/[\u0000-\u0008\u000b-\u001f\u007f-\u009f\u00ad\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff\u{e0000}-\u{e007f}]/gu, "");
+            while (result.includes("<!--")) result = result.replace(/<!--[\s\S]*?-->|<!--/gu, "");
+            return result;
+          };
           review.body = sanitize(review.body);
           for (const comment of review.comments) comment.body = sanitize(comment.body);
           fs.writeFileSync(path, JSON.stringify(review));

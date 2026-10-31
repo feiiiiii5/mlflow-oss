@@ -41,14 +41,29 @@ and logs under /tmp/verify-out/work. Start the backend from the repository root:
 uv run mlflow server --dev --host 127.0.0.1 --port 5000 \
   --backend-store-uri sqlite:////tmp/verify-out/work/mlflow.db \
   --artifacts-destination /tmp/verify-out/work/artifacts \
-  > /tmp/verify-out/work/backend.log 2>&1
+  > /tmp/verify-out/work/backend.log 2>&1 &
 ```
 
-In mlflow/server/js, run `yarn install --immutable`, then start the frontend with
-`PORT=3000 BROWSER=none CI=false yarn start`. Run both servers as background tasks. Wait for
-`curl --noproxy '*' http://localhost:5000/health` and `curl --noproxy '*' http://localhost:3000/`
-to succeed. Use agent-browser on local MLflow URLs, and start each browser session with
-`--init-script "$browser_init"` on its first `open`.
+Install dependencies and start the frontend as a background task:
+
+```bash
+cd mlflow/server/js
+yarn install --immutable
+PORT=3000 BROWSER=none CI=false yarn start > /tmp/verify-out/work/frontend.log 2>&1 &
+```
+
+Wait until both requests succeed:
+
+```bash
+curl --noproxy '*' http://localhost:5000/health
+curl --noproxy '*' http://localhost:3000/
+```
+
+Use agent-browser on local MLflow URLs, and pass the init script on each session's first `open`:
+
+```bash
+agent-browser --init-script "$browser_init" open http://localhost:3000
+```
 
 When a recording would make the behavior clearer, rehearse the steps first and choose stable
 selectors. Snapshot refs such as `@e12` do not carry over to a new session. Hide overlays that
